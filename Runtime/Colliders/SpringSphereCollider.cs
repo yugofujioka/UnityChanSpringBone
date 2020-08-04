@@ -4,6 +4,10 @@ namespace Unity.Animations.SpringBones
 {
     public class SpringSphereCollider : MonoBehaviour
     {
+        // add fujioka
+        [System.NonSerialized]
+        public int index = 0;
+
         public float radius = 0.1f;
 
         // If linkedRenderer is not null, the collider will be enabled 
