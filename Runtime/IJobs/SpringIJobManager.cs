@@ -10,7 +10,7 @@ using UnityEngine.Playables;
 namespace Unity.Animations.SpringBones.JobExtend {
 	public class SpringIJobManager : MonoBehaviour {
         [Header("Initialize Settings")] 
-		public bool optimizeTransform = true;
+		public bool optimizeTransform = false;
         [Header("Debug")] 
         public bool allowInspectorEdit = false;
 		[Header("Properties")]
