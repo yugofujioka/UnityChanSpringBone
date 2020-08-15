@@ -154,12 +154,10 @@ namespace Unity.Animations.SpringBones.Jobs {
 			var magnitude = math.length(headToTail);
 
 			const float MagnitudeThreshold = 0.001f;
-			if (magnitude <= MagnitudeThreshold) {
-				var mat = new float4x4(bone.rotation, bone.position);
-				headToTail = mat.MultiplyVector(prop.boneAxis);
-			} else {
+			if (magnitude <= MagnitudeThreshold)
+				headToTail = math.rotate(new float4x4(bone.rotation, bone.position), prop.boneAxis);
+			else
 				headToTail /= magnitude;
-			}
 
 			bone.currentTipPosition = headPosition + prop.springLength * headToTail;
 		}
