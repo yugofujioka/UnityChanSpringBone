@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Animations.SpringBones.Jobs
 {
@@ -9,9 +10,9 @@ namespace Unity.Animations.SpringBones.Jobs
         (
             SpringColliderProperties capsule,
             SpringColliderComponents transform,
-            Vector3 moverHeadPosition, 
-            ref Vector3 moverPosition, 
-            ref Vector3 hitNormal,
+            float3 moverHeadPosition, 
+            ref float3 moverPosition, 
+            ref float3 hitNormal,
             float moverRadius
         )
         {
@@ -20,11 +21,11 @@ namespace Unity.Animations.SpringBones.Jobs
                 return false;
 
             var worldToLocal = transform.worldToLocalMatrix;
-            var radiusScale = worldToLocal.MultiplyVector(new Vector3(1f, 0f, 0f)).magnitude;
+            var radiusScale = math.length(math.rotate(worldToLocal, new float3(1f, 0f, 0f)));
 
             // Lower than start cap
-            var localHeadPosition = worldToLocal.MultiplyPoint3x4(moverHeadPosition);
-            var localMoverPosition = worldToLocal.MultiplyPoint3x4(moverPosition);
+            var localHeadPosition = math.transform(worldToLocal, moverHeadPosition);
+            var localMoverPosition = math.transform(worldToLocal, moverPosition);
             var localMoverRadius = moverRadius * radiusScale;
 
             var moverIsAboveTop = localMoverPosition.y >= capsule.height;
@@ -33,29 +34,30 @@ namespace Unity.Animations.SpringBones.Jobs
             
             if (useSphereCheck)
             {
-                var sphereOrigin = new Vector3(0f, moverIsAboveTop ? capsule.height : 0f, 0f);
+                var sphereOrigin = new float3(0f, moverIsAboveTop ? capsule.height : 0f, 0f);
                 combinedRadius = localMoverRadius + capsule.radius;
-                if ((localMoverPosition - sphereOrigin).sqrMagnitude >= combinedRadius * combinedRadius)
+                var dist = localMoverPosition - sphereOrigin;
+                if (math.dot(dist, dist) >= combinedRadius * combinedRadius)
                 {
                     // Not colliding
                     return false;
                 }
 
                 var originToHead = localHeadPosition - sphereOrigin;
-                var isHeadEmbedded = originToHead.sqrMagnitude <= capsule.radius * capsule.radius;
+                var isHeadEmbedded = math.dot(originToHead, originToHead) <= capsule.radius * capsule.radius;
                 
                 if (isHeadEmbedded)
                 {
                     // The head is inside the sphere, so just try to push the tail out
-                    var localHitNormal = (localMoverPosition - sphereOrigin).normalized;
+                    var localHitNormal = math.normalize(localMoverPosition - sphereOrigin);
                     localMoverPosition = sphereOrigin + localHitNormal * combinedRadius;
                     var localToWorld = transform.localToWorldMatrix;
-                    moverPosition = localToWorld.MultiplyPoint3x4(localMoverPosition);
-                    hitNormal = Vector3.Normalize(localToWorld.MultiplyVector(localHitNormal));
+                    moverPosition = math.transform(localToWorld, localMoverPosition);
+                    hitNormal = math.normalize(math.rotate(localToWorld, localHitNormal));
                     return true;
                 }
 
-                var localHeadRadius = (localMoverPosition - localHeadPosition).magnitude;
+                var localHeadRadius = math.length(localMoverPosition - localHeadPosition);
                 if (ComputeIntersection_Sphere(
                     localHeadPosition, localHeadRadius,
                     sphereOrigin, combinedRadius,
@@ -63,25 +65,25 @@ namespace Unity.Animations.SpringBones.Jobs
                 {
                     localMoverPosition = ComputeNewTailPosition_Sphere(intersection, localMoverPosition);
                     var localToWorld = transform.localToWorldMatrix;
-                    moverPosition = localToWorld.MultiplyPoint3x4(localMoverPosition);
-                    var localHitNormal = Vector3.Normalize(localMoverPosition - sphereOrigin);
-                    hitNormal = Vector3.Normalize(localToWorld.MultiplyVector(localHitNormal));
+                    moverPosition = math.transform(localToWorld, localMoverPosition);
+                    var localHitNormal = math.normalize(localMoverPosition - sphereOrigin);
+                    hitNormal = math.normalize(math.rotate(localToWorld, localHitNormal));
                 }
 
                 return true;
             }
 
-            var originToMover = new Vector2(localMoverPosition.x, localMoverPosition.z);
+            var originToMover = new float2(localMoverPosition.x, localMoverPosition.z);
             combinedRadius = capsule.radius + localMoverRadius;
-            var collided = originToMover.sqrMagnitude <= combinedRadius * combinedRadius;
+            var collided = math.dot(originToMover, originToMover) <= combinedRadius * combinedRadius;
             if (collided)
             {
-                var normal = originToMover.normalized;
+                var normal = math.normalize(originToMover);
                 originToMover = combinedRadius * normal;
-                var newLocalMoverPosition = new Vector3(originToMover.x, localMoverPosition.y, originToMover.y);
+                var newLocalMoverPosition = new float3(originToMover.x, localMoverPosition.y, originToMover.y);
                 var localToWorld = transform.localToWorldMatrix;
-                moverPosition = localToWorld.MultiplyPoint3x4(newLocalMoverPosition);
-                hitNormal = Vector3.Normalize(localToWorld.MultiplyVector(new Vector3(normal.x, 0f, normal.y)));
+                moverPosition = math.transform(localToWorld, newLocalMoverPosition);
+                hitNormal = math.normalize(math.rotate(localToWorld, new float3(normal.x, 0f, normal.y)));
             }
 
             return collided;

@@ -1,5 +1,6 @@
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 using FUtility;
@@ -44,13 +45,13 @@ namespace Unity.Animations.SpringBones.Jobs {
 		internal NativeArray<SpringForceComponent> forces;
 		internal NativeContainerPool<SpringBoneProperties> properties;
 		internal NativeArray<SpringBoneComponents> components;
-		internal NativeArray<Matrix4x4> parentComponents;
-		internal NativeArray<Matrix4x4> pivotComponents;
+		internal NativeArray<float4x4> parentComponents;
+		internal NativeArray<float4x4> pivotComponents;
 		internal NativeContainerPool<SpringColliderProperties> colProperties;
 		internal NativeArray<SpringColliderComponents> colComponents;
 		internal NativeContainerPool<int> colNumbers;
 		internal NativeContainerPool<LengthLimitProperties> lengthProperties;
-		internal NativeContainerPool<Vector3> lengthLimitTargets;
+		internal NativeContainerPool<float3> lengthLimitTargets;
 
 		internal TransformAccessArray boneTransforms;
 		internal TransformAccessArray boneParentTransforms;
@@ -125,13 +126,13 @@ namespace Unity.Animations.SpringBones.Jobs {
 			this.forces = new NativeArray<SpringForceComponent>(this.forceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 			this.properties = new NativeContainerPool<SpringBoneProperties>(this.boneCapacity, this.registerCapacity);
 			this.components = new NativeArray<SpringBoneComponents>(this.boneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-			this.parentComponents = new NativeArray<Matrix4x4>(this.boneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-			this.pivotComponents = new NativeArray<Matrix4x4>(this.boneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+			this.parentComponents = new NativeArray<float4x4>(this.boneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+			this.pivotComponents = new NativeArray<float4x4>(this.boneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 			this.colProperties = new NativeContainerPool<SpringColliderProperties>(this.colliderCapacity, this.registerCapacity);
 			this.colComponents = new NativeArray<SpringColliderComponents>(this.colliderCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 			this.colNumbers = new NativeContainerPool<int>(this.registedColliderCapacity, this.boneCapacity);
 			this.lengthProperties = new NativeContainerPool<LengthLimitProperties>(this.registeredLengthLimitCapacity, this.boneCapacity);
-			this.lengthLimitTargets = new NativeContainerPool<Vector3>(this.registeredLengthLimitCapacity, this.registerCapacity);
+			this.lengthLimitTargets = new NativeContainerPool<float3>(this.registeredLengthLimitCapacity, this.registerCapacity);
 
 			this.boneTransforms = new TransformAccessArray(new Transform[this.boneCapacity]);
 			this.boneParentTransforms = new TransformAccessArray(new Transform[this.boneCapacity]);

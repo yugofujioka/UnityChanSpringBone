@@ -1,5 +1,6 @@
 using System.Diagnostics.Contracts;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Animations.SpringBones.Jobs {
     [System.Serializable]
@@ -10,64 +11,65 @@ namespace Unity.Animations.SpringBones.Jobs {
 
         private static float ComputeFalloff(float value, float range) {
             const float Threshold = 0.0001f;
-            if (Mathf.Abs(range) <= Threshold) { return 0f; }
+            if (math.abs(range) <= Threshold) { return 0f; }
 
             var normalizedValue = value / range;
-            normalizedValue = Mathf.Clamp01(normalizedValue);
-            return Mathf.Min(normalizedValue, Mathf.Sqrt(normalizedValue));
+            normalizedValue = math.clamp(normalizedValue, 0f, 1f);
+            return math.min(normalizedValue, math.sqrt(normalizedValue));
         }
 
         // Returns true if exceeded bounds
         [Pure]
-        public Vector3 ConstrainVector
+        public float3 ConstrainVector
         (
-            Vector3 target,
-            Vector3 basisSide,
-            Vector3 basisUp,
-            Vector3 basisForward,
+            float3 target,
+            float3 basisSide,
+            float3 basisUp,
+            float3 basisForward,
             float springStrength,
             float deltaTime
         ) {
             var upProjection = Project(target, basisUp);
             var projection = target - upProjection;
-            var projectionMagnitude = projection.magnitude;
-            var originalSine = Vector3.Dot(projection / projectionMagnitude, basisSide);
+            var projectionMagnitude = math.length(projection);
+            var originalSine = math.dot(projection / projectionMagnitude, basisSide);
             // The above math might have a bit of floating point error 
             // so clamp the sine value into a valid range so we don't get NaN later
-            originalSine = Mathf.Clamp(originalSine, -1f, 1f);
+            originalSine = math.clamp(originalSine, -1f, 1f);
 
             // Use soft limits based on Hooke's Law to reduce jitter,
             // then apply hard limits
-            var newAngle = Mathf.Rad2Deg * Mathf.Asin(originalSine);
+            var newAngle = math.degrees(math.asin(originalSine));
             var acceleration = -newAngle * springStrength;
             newAngle += acceleration * deltaTime * deltaTime;
 
             var minAngle = min;
             var maxAngle = max;
-            var preClampAngle = newAngle;
-            newAngle = Mathf.Clamp(newAngle, minAngle, maxAngle);
+            //var preClampAngle = newAngle;
+            newAngle = math.clamp(newAngle, minAngle, maxAngle);
 
             // Apply falloff
             var curveLimit = (newAngle < 0f) ? minAngle : maxAngle;
             newAngle = ComputeFalloff(newAngle, curveLimit) * curveLimit;
 
-            var radians = Mathf.Deg2Rad * newAngle;
-            var newProjection = Mathf.Sin(radians) * basisSide + Mathf.Cos(radians) * basisForward;
+            var radians = math.radians(newAngle);
+            var newProjection = math.sin(radians) * basisSide + math.cos(radians) * basisForward;
             newProjection *= projectionMagnitude;
 
             return newProjection + upProjection;
         }
 
-        public static Vector3 Project(Vector3 vector, Vector3 onNormal) {
-            float sqrMag = Vector3.Dot(onNormal, onNormal);
+        public static float3 Project(float3 vector, float3 onNormal) {
+            float sqrMag = math.dot(onNormal, onNormal);
             // Burst対応の際にMathf.Epsilonを扱うと怒られる
-            // Vector3.kEpsilonの1E-05は荒い気もするが元々Vector3演算なのでVector3の定義に合わせる
+            // float3.kEpsilonの1E-05は荒い気もするが元々float3演算なのでfloat3の定義に合わせる
             //if (sqrMag < Mathf.Epsilon)
-            if (sqrMag < Vector3.kEpsilon)
-                return Vector3.zero;
+            const float kEpsilon = 1E-05F;
+            if (sqrMag < kEpsilon)
+                return float3.zero;
             else {
-                var dot = Vector3.Dot(vector, onNormal);
-                return new Vector3(onNormal.x * dot / sqrMag,
+                var dot = math.dot(vector, onNormal);
+                return new float3(onNormal.x * dot / sqrMag,
                     onNormal.y * dot / sqrMag,
                     onNormal.z * dot / sqrMag);
             }

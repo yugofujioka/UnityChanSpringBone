@@ -1,12 +1,12 @@
-﻿using UnityEngine;
+﻿using Unity.Mathematics;
 
 namespace Unity.Animations.SpringBones.Jobs {
     /// <summary>
     /// コリジョン情報
     /// </summary>
     public struct Intersection {
-        public Vector3 origin;
-        public Vector3 upVector;
+        public float3 origin;
+        public float3 upVector;
         public float radius;
     }
 
@@ -36,7 +36,7 @@ namespace Unity.Animations.SpringBones.Jobs {
     /// </summary>
     [System.Serializable]
     public struct SpringColliderComponents {
-        public Matrix4x4 worldToLocalMatrix;
-        public Matrix4x4 localToWorldMatrix;
+        public float4x4 worldToLocalMatrix;
+        public float4x4 localToWorldMatrix;
     }
 }

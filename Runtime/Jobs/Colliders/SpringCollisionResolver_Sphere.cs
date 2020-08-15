@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Animations.SpringBones.Jobs
 {
@@ -8,15 +9,15 @@ namespace Unity.Animations.SpringBones.Jobs
         (
             SpringColliderProperties sphere,
             SpringColliderComponents transform,
-            Vector3 headPosition,
-            ref Vector3 tailPosition,
-            ref Vector3 hitNormal,
+            float3 headPosition,
+            ref float3 tailPosition,
+            ref float3 hitNormal,
             float tailRadius
         )
         {
             var worldToLocal = transform.worldToLocalMatrix;
-            var localTailPosition = worldToLocal.MultiplyPoint3x4(tailPosition);
-            var localTailSqrDistance = localTailPosition.sqrMagnitude;
+            var localTailPosition = math.transform(worldToLocal, tailPosition);
+            var localTailSqrDistance = math.dot(localTailPosition, localTailPosition);
 
             var combinedRadius = sphere.radius + tailRadius;
             if (localTailSqrDistance >= combinedRadius * combinedRadius)
@@ -25,25 +26,25 @@ namespace Unity.Animations.SpringBones.Jobs
                 return false;
             }
 
-            var localHeadPosition = worldToLocal.MultiplyPoint3x4(headPosition);
-            var localHeadSqrDistance = localHeadPosition.sqrMagnitude;
+            var localHeadPosition = math.transform(worldToLocal, headPosition);
+            var localHeadSqrDistance = math.dot(localHeadPosition, localHeadPosition);
 
             if (localHeadSqrDistance <= sphere.radius * sphere.radius) {
                 // The head is inside the sphere, so just try to push the tail out
-                localTailPosition = localTailPosition.normalized * combinedRadius;
+                localTailPosition = math.normalize(localTailPosition) * combinedRadius;
             } else {
-                var localHeadRadius = (localTailPosition - localHeadPosition).magnitude;
+                var localHeadRadius = math.length(localTailPosition - localHeadPosition);
                 if (ComputeIntersection_Sphere(
                     localHeadPosition, localHeadRadius,
-                    Vector3.zero, combinedRadius,
+                    float3.zero, combinedRadius,
                     out var intersection)) {
                     localTailPosition = ComputeNewTailPosition_Sphere(intersection, localTailPosition);
                 }
             }
 
             var localToWorld = transform.localToWorldMatrix;
-            tailPosition = localToWorld.MultiplyPoint3x4(localTailPosition);
-            hitNormal = Vector3.Normalize(localToWorld.MultiplyVector(localTailPosition));
+            tailPosition = math.transform(localToWorld, localTailPosition);
+            hitNormal = math.normalize(math.rotate(localToWorld, localTailPosition));
 
             return true;
         }
@@ -51,16 +52,16 @@ namespace Unity.Animations.SpringBones.Jobs
         // http://mathworld.wolfram.com/Sphere-SphereIntersection.html
         private static bool ComputeIntersection_Sphere
         (
-            Vector3 originA,
+            float3 originA,
             float radiusA,
-            Vector3 originB,
+            float3 originB,
             float radiusB,
             out Intersection intersection
         )
         {
             var aToB = originB - originA;
-            var dSqr = aToB.sqrMagnitude;
-            var d = Mathf.Sqrt(dSqr);
+            var dSqr = math.dot(aToB, aToB);
+            var d = math.sqrt(dSqr);
             if (d <= 0f)
             {
                 intersection = new Intersection();
@@ -75,7 +76,7 @@ namespace Unity.Animations.SpringBones.Jobs
             var subTerm = dSqr - radiusBSqr + radiusASqr;
             var x = subTerm * denominator;
             var squaredTerm = subTerm * subTerm;
-            var intersectionRadius = Mathf.Sqrt(4f * dSqr * radiusASqr - squaredTerm) * denominator;
+            var intersectionRadius = math.sqrt(4f * dSqr * radiusASqr - squaredTerm) * denominator;
 
             var upVector = aToB / d;
             var origin = originA + x * upVector;
@@ -90,14 +91,14 @@ namespace Unity.Animations.SpringBones.Jobs
             return true;
         }
 
-        private static Vector3 ComputeNewTailPosition_Sphere(Intersection intersection, Vector3 tailPosition)
+        private static float3 ComputeNewTailPosition_Sphere(Intersection intersection, float3 tailPosition)
         {
             // http://stackoverflow.com/questions/300871/best-way-to-find-a-point-on-a-circle-closest-to-a-given-point
             // Project child's position onto the plane
             var newTailPosition = tailPosition
-                - Vector3.Dot(intersection.upVector, tailPosition - intersection.origin) * intersection.upVector;
+                - math.dot(intersection.upVector, tailPosition - intersection.origin) * intersection.upVector;
             var v = newTailPosition - intersection.origin;
-            var newPosition = intersection.origin + intersection.radius * v.normalized;
+            var newPosition = intersection.origin + intersection.radius * math.normalize(v);
             return newPosition;
         }        
     }

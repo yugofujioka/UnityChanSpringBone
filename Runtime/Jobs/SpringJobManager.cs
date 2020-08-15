@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Mathematics;
 using System.Linq;
 using FUtility;
 
@@ -30,7 +31,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 		private int boneIndex, colIndex, lengthIndex;
 		private NestedNativeArray<SpringBoneProperties> properties;
 		private NestedNativeArray<SpringColliderProperties> colProperties;
-		private NestedNativeArray<Vector3> lengthLimitTargets;
+		private NestedNativeArray<float3> lengthLimitTargets;
 
 		// NOTE: ランタイム時に行わなくても良いボーンの初期化データは全部用意しておく
 		//       その分Job化したら再編集は不可とする（サポートするのは今回パス）
@@ -127,8 +128,8 @@ namespace Unity.Animations.SpringBones.Jobs {
 				}
 
 				// ReadOnly
-				int parentIndex = -1;
-				Matrix4x4 pivotLocalMatrix = Matrix4x4.identity;
+				var parentIndex = -1;
+				var pivotLocalMatrix = Matrix4x4.identity;
 				if (parent.TryGetComponent<SpringBone>(out var parentBone))
 					parentIndex = parentBone.index;
 
@@ -328,8 +329,8 @@ namespace Unity.Animations.SpringBones.Jobs {
 
 			this.job.nestedProperties = this.properties;
 			this.job.nestedComponents = new NestedNativeArray<SpringBoneComponents>(scheduler.components, this.boneIndex, this.properties.Length);
-			this.job.nestedParentComponents = new NestedNativeArray<Matrix4x4>(scheduler.parentComponents, this.boneIndex, this.properties.Length);
-			this.job.nestedPivotComponents = new NestedNativeArray<Matrix4x4>(scheduler.pivotComponents, this.boneIndex, this.properties.Length);
+			this.job.nestedParentComponents = new NestedNativeArray<float4x4>(scheduler.parentComponents, this.boneIndex, this.properties.Length);
+			this.job.nestedPivotComponents = new NestedNativeArray<float4x4>(scheduler.pivotComponents, this.boneIndex, this.properties.Length);
 			this.job.nestedColliderProperties = this.colProperties;
 			this.job.nestedColliderComponents = new NestedNativeArray<SpringColliderComponents>(scheduler.colComponents, this.colIndex, this.colProperties.Length);
 			this.job.nestedLengthLimitTargets = this.lengthLimitTargets;

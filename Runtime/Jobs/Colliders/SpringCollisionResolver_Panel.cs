@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Animations.SpringBones.Jobs
 {
@@ -6,7 +7,7 @@ namespace Unity.Animations.SpringBones.Jobs
     public static partial class SpringCollisionResolver
     {
 
-//        public Vector3 GetPlaneNormal()
+//        public float3 GetPlaneNormal()
 //        {
 //            return transform.forward;
 //        }
@@ -15,14 +16,14 @@ namespace Unity.Animations.SpringBones.Jobs
         (
             SpringColliderProperties panel,
             SpringColliderComponents transform,
-            Vector3 headPosition,
-            ref Vector3 tailPosition,
-            ref Vector3 hitNormal,
+            float3 headPosition,
+            ref float3 tailPosition,
+            ref float3 hitNormal,
             float length,
             float tailRadius
         )
         {
-            var localTailPosition = transform.localToWorldMatrix.MultiplyPoint3x4(tailPosition);
+            var localTailPosition = math.transform(transform.localToWorldMatrix, tailPosition);
             
             // Plane transform is z-up. if hence z >= tailRadius, there is no collision.  
             if (localTailPosition.z >= tailRadius)
@@ -30,16 +31,16 @@ namespace Unity.Animations.SpringBones.Jobs
                 return false;
             }
 
-            var localHeadPosition = transform.worldToLocalMatrix.MultiplyPoint3x4(headPosition);
+            var localHeadPosition = math.transform(transform.worldToLocalMatrix, headPosition);
 
             var halfWidth = panel.width / 2f;
             var halfHeight = panel.height /2f;
 
-            var pointOnPlane = Vector3.Lerp(localHeadPosition, localTailPosition,
-                Mathf.Clamp01(localHeadPosition.z/(localHeadPosition.z - localTailPosition.z)));
+            var pointOnPlane = math.lerp(localHeadPosition, localTailPosition,
+                math.clamp(localHeadPosition.z/(localHeadPosition.z - localTailPosition.z), 0f, 1f));
             
-            if (Mathf.Abs(pointOnPlane.x) >= halfWidth + tailRadius || 
-                Mathf.Abs(pointOnPlane.y) >= halfHeight + tailRadius)
+            if (math.abs(pointOnPlane.x) >= halfWidth + tailRadius || 
+                math.abs(pointOnPlane.y) >= halfHeight + tailRadius)
             {
                 return false;
             }
@@ -48,15 +49,15 @@ namespace Unity.Animations.SpringBones.Jobs
             // SpringBone is entirely over plane (only sphere is crossing)
             if (localHeadPosition.z <= 0f && localTailPosition.z <= 0f)
             {
-                if (Mathf.Abs(localHeadPosition.y) > halfHeight)
+                if (math.abs(localHeadPosition.y) > halfHeight)
                 {
                     halfHeight = (localTailPosition.y < 0f) ? -halfHeight : halfHeight;
-                    localTailPosition = new Vector3(localTailPosition.x, halfHeight, localTailPosition.z);
+                    localTailPosition = new float3(localTailPosition.x, halfHeight, localTailPosition.z);
                 }
-                else if (Mathf.Abs(localHeadPosition.x) > halfWidth)
+                else if (math.abs(localHeadPosition.x) > halfWidth)
                 {
                     halfWidth = (localTailPosition.x < 0f) ? -halfWidth : halfWidth;
-                    localTailPosition = new Vector3(halfWidth, localTailPosition.y, localTailPosition.z);
+                    localTailPosition = new float3(halfWidth, localTailPosition.y, localTailPosition.z);
                 }
                 else
                 {
@@ -66,18 +67,18 @@ namespace Unity.Animations.SpringBones.Jobs
             } 
             
             else {
-                if (Mathf.Abs(localTailPosition.y) > halfHeight)
+                if (math.abs(localTailPosition.y) > halfHeight)
                 {
                     halfHeight = (localTailPosition.y < 0f) ? -halfHeight : halfHeight;
-                    var localNormal = new Vector3(0f, localTailPosition.y - halfHeight, localTailPosition.z).normalized;
+                    var localNormal = math.normalize(new float3(0f, localTailPosition.y - halfHeight, localTailPosition.z));
                     localTailPosition =
-                        new Vector3(localTailPosition.x, halfHeight, 0f) + tailRadius * localNormal;
+                        new float3(localTailPosition.x, halfHeight, 0f) + tailRadius * localNormal;
                 }
-                else if (Mathf.Abs(localTailPosition.x) > halfWidth)
+                else if (math.abs(localTailPosition.x) > halfWidth)
                 {
                     halfWidth = (localTailPosition.x < 0f) ? -halfWidth : halfWidth;
-                    var localNormal = new Vector3(localTailPosition.x - halfWidth, 0f, localTailPosition.z).normalized;
-                    localTailPosition = new Vector3(halfWidth, localTailPosition.y, 0f) + tailRadius * localNormal;
+                    var localNormal = math.normalize(new float3(localTailPosition.x - halfWidth, 0f, localTailPosition.z));
+                    localTailPosition = new float3(halfWidth, localTailPosition.y, 0f) + tailRadius * localNormal;
                 }
                 else
                 {
@@ -91,19 +92,18 @@ namespace Unity.Animations.SpringBones.Jobs
                     {
                         var heightAboveRadius = localHeadPosition.z - tailRadius;
                         var projectionLength =
-                            Mathf.Sqrt(length * length - heightAboveRadius * heightAboveRadius);
+                            math.sqrt(length * length - heightAboveRadius * heightAboveRadius);
                         var localBoneVector = localTailPosition - localHeadPosition;
-                        var projectionVector = new Vector2(localBoneVector.x, localBoneVector.y);
-                        var projectionVectorLength = projectionVector.magnitude;
+                        var projectionVector = new float2(localBoneVector.x, localBoneVector.y);
+                        var projectionVectorLength = math.length(projectionVector);
                         if (projectionVectorLength > 0.001f)
                         {
                             var projection = (projectionLength / projectionVectorLength) * projectionVector;
-                            newLocalTailPosition = new Vector4
+                            newLocalTailPosition = new float3
                             {
                                 x = newLocalTailPosition.x + projection.x,
                                 y = newLocalTailPosition.y + projection.y,
                                 z = newLocalTailPosition.z + tailRadius,
-                                w = 0f
                             };
                         }
                     }
@@ -111,16 +111,16 @@ namespace Unity.Animations.SpringBones.Jobs
                 }
             }
 
-            tailPosition = transform.localToWorldMatrix.MultiplyPoint3x4(localTailPosition);
-            hitNormal = Vector3.Normalize(transform.localToWorldMatrix.MultiplyPoint3x4(Vector3.forward)); 
+            tailPosition = math.transform(transform.localToWorldMatrix, localTailPosition);
+            hitNormal = math.normalize(math.transform(transform.localToWorldMatrix, new float3(0, 0, 1f))); 
 
             return true;
         }
 
         public static bool ResolvePanelOnAxis
         (
-            Vector3 localHeadPosition,
-            ref Vector3 localTailPosition,
+            float3 localHeadPosition,
+            ref float3 localTailPosition,
             float localLength,
             float localTailRadius,
             Axis upAxis
@@ -144,10 +144,10 @@ namespace Unity.Animations.SpringBones.Jobs
                 var yIndex = (zIndex + 2) % (int) Axis.AxisCount;
 
                 var heightAboveRadius = localHeadPosition[zIndex] - localTailRadius;
-                var projectionLength = Mathf.Sqrt(localLength * localLength - heightAboveRadius * heightAboveRadius);
+                var projectionLength = math.sqrt(localLength * localLength - heightAboveRadius * heightAboveRadius);
                 var localBoneVector = localTailPosition - localHeadPosition;
-                var projectionVector = new Vector2(localBoneVector[xIndex], localBoneVector[yIndex]);
-                var projectionVectorLength = projectionVector.magnitude;
+                var projectionVector = new float2(localBoneVector[xIndex], localBoneVector[yIndex]);
+                var projectionVectorLength = math.length(projectionVector);
                 if (projectionVectorLength > 0.001f)
                 {
                     var projection = (projectionLength / projectionVectorLength) * projectionVector;

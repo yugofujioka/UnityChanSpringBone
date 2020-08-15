@@ -24,7 +24,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 	public struct SpringParentJob : IJobParallelForTransform {
 		[ReadOnly] public NativeArray<SpringBoneProperties> properties;
 
-		[WriteOnly] public NativeArray<Matrix4x4> components;
+		[WriteOnly] public NativeArray<float4x4> components;
 
 		void IJobParallelForTransform.Execute(int index, TransformAccess transform) {
 			// NOTE: SpringBoneに依存する場合はtransform不要なのでキックした方が速い
@@ -44,7 +44,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 	public struct SpringPivotJob : IJobParallelForTransform {
 		[ReadOnly] public NativeArray<SpringBoneProperties> properties;
 
-		[WriteOnly] public NativeArray<Matrix4x4> components;
+		[WriteOnly] public NativeArray<float4x4> components;
 
 		void IJobParallelForTransform.Execute(int index, TransformAccess transform) {
 			// NOTE: SpringBoneに依存する場合はtransform不要なのでキックした方が速い
@@ -85,7 +85,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 	/// </summary>
 	[Burst.BurstCompile]
 	public struct SpringLengthTargetJob : IJobParallelForTransform {
-		[WriteOnly] public NativeArray<Vector3> components;
+		[WriteOnly] public NativeArray<float3> components;
 
 		void IJobParallelForTransform.Execute(int index, TransformAccess transform) {
 			this.components[index] = transform.position;
