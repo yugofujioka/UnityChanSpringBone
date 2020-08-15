@@ -71,7 +71,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 			quaternion rot = transform.rotation;
 			this.components[index] = new SpringColliderComponents {
 				localToWorldMatrix = new float4x4(rot, pos),
-				worldToLocalMatrix = math.mul(new float4x4(math.inverse(rot), float3.zero), new float4x4(float3x3.identity, -pos)),
+				worldToLocalMatrix = math.mul(new float4x4(math.inverse(rot), float3.zero), float4x4.Translate(-pos)),
 			};
 			//this.components[index] = new SpringColliderComponents {
 			//	localToWorldMatrix = transform.localToWorldMatrix,
