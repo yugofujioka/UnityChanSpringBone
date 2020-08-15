@@ -34,7 +34,6 @@ namespace Unity.Animations.SpringBones.Jobs {
 	/// <summary>
 	/// 更新されるボーン毎の値（Read/Write in Job）
 	/// </summary>
-	[System.Serializable]
 	public struct SpringBoneComponents {
 		public float3 currentTipPosition;
 		public float3 previousTipPosition;

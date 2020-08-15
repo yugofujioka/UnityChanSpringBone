@@ -42,7 +42,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 		[SerializeField, HideInInspector]
 		private SpringBoneProperties[] jobProperties = null;
 		[SerializeField, HideInInspector]
-		private SpringBoneComponents[] jobComponents = null;
+		private Quaternion[] initLocalRotations = null;
 		[SerializeField, HideInInspector]
 		private SpringColliderProperties[] jobColProperties = null;
 		[SerializeField, HideInInspector]
@@ -85,7 +85,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 			var nSpringBones = this.sortedBones.Length;
 
 			this.jobProperties = new SpringBoneProperties[nSpringBones];
-			this.jobComponents = new SpringBoneComponents[nSpringBones];
+			this.initLocalRotations = new Quaternion[nSpringBones];
 			this.jobColProperties = new SpringColliderProperties[nSpringBones];
 			//this.jobLengthProperties = new LengthLimitProperties[nSpringBones][];
 			var jobLengthPropertiesList = new List<LengthLimitProperties>();
@@ -174,12 +174,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 					pivotLocalMatrix = pivotLocalMatrix,
 				};
 
-				// Read/Write (initialize param)
-				this.jobComponents[this.boneIndex + i] = new SpringBoneComponents {
-					currentTipPosition = currTipPos,
-					previousTipPosition = prevTipPos,
-					localRotation = root.localRotation,
-				};
+				this.initLocalRotations[i] = root.localRotation;
 
 				// turn off SpringBone component to let Job work
 				springBone.enabled = false;
@@ -272,9 +267,11 @@ namespace Unity.Animations.SpringBones.Jobs {
 				// Read/Write（initialize param）
 				// NOTE: ワールド座標依存なので再計算
 				Vector3 tipPosition = springBone.ComputeChildPosition();
-				this.jobComponents[i].currentTipPosition = tipPosition;
-				this.jobComponents[i].previousTipPosition = tipPosition;
-				scheduler.components[fullBoneIndex] = this.jobComponents[i];
+				scheduler.components[fullBoneIndex] = new SpringBoneComponents {
+					currentTipPosition = tipPosition,
+					previousTipPosition = tipPosition,
+					localRotation = this.initLocalRotations[i],
+				};
 
 				// TransformArray
 				var root = springBone.transform;
