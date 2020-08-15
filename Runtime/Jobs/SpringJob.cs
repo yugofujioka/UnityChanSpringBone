@@ -25,7 +25,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 		public int parentIndex; // 親がSpringBoneだった場合のIndex（違う場合 -1）
 
 		public int pivotIndex;  // PivotがSpringBoneだった場合のIndex（違う場合 -1）
-		public Matrix4x4 pivotLocalMatrix;
+		public float4x4 pivotLocalMatrix;
 
 		public NestedNativeArray<int> collisionNumbers;
 		public NestedNativeArray<LengthLimitProperties> lengthLimitProps;
@@ -106,7 +106,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 				var bone = this.nestedComponents[i];
 				var prop = this.nestedProperties[i];
 
-				Quaternion parentRot;
+				quaternion parentRot;
 				if (prop.parentIndex >= 0) {
 					// 親ノードがSpringBoneなら演算結果を反映する
 					var parentBone = this.nestedComponents[prop.parentIndex];
@@ -155,7 +155,7 @@ namespace Unity.Animations.SpringBones.Jobs {
 
 			const float MagnitudeThreshold = 0.001f;
 			if (magnitude <= MagnitudeThreshold) {
-				Matrix4x4 mat = new float4x4(bone.rotation, bone.position);
+				var mat = new float4x4(bone.rotation, bone.position);
 				headToTail = mat.MultiplyVector(prop.boneAxis);
 			} else {
 				headToTail /= magnitude;
@@ -360,13 +360,19 @@ namespace Unity.Animations.SpringBones.Jobs {
 			bone.localRotation = math.nlerp(bone.localRotation, actualLocalRotation, this.dynamicRatio);
 		}
 
-		private static Quaternion ComputeLocalRotation(in quaternion baseWorldRotation, ref SpringBoneComponents bone, in SpringBoneProperties prop) {
-			var worldBoneVector = bone.currentTipPosition - bone.position;
-			var localBoneVector = Quaternion.Inverse(baseWorldRotation) * worldBoneVector;
-			localBoneVector.Normalize();
+		public static quaternion FromToRotation(float3 from, float3 to) {
+			return quaternion.AxisAngle(
+				math.normalize(math.cross(from, to)),
+				math.acos(math.clamp(math.dot(math.normalize(from), math.normalize(to)), -1f, 1f)));
+		}
 
-			var aimRotation = Quaternion.FromToRotation(prop.boneAxis, localBoneVector);
-			var outputRotation = prop.initialLocalRotation * aimRotation;
+		private static quaternion ComputeLocalRotation(in quaternion baseWorldRotation, ref SpringBoneComponents bone, in SpringBoneProperties prop) {
+			var worldBoneVector = bone.currentTipPosition - bone.position;
+			var localBoneVector = math.mul(math.inverse(baseWorldRotation), worldBoneVector);
+			localBoneVector = math.normalize(localBoneVector);
+
+			var aimRotation = FromToRotation(prop.boneAxis, localBoneVector);
+			var outputRotation = math.mul(prop.initialLocalRotation, aimRotation);
 
 			return outputRotation;
 		}
@@ -384,10 +390,8 @@ namespace Unity.Animations.SpringBones.Jobs {
 		// ForceVolume
 		private static float3 ComputeForceOnBone(in SpringForceComponent force, in SpringBoneComponents bone, float boneWindInfluence) {
 			//Directional
-			if (force.type == SpringBoneForceType.Directional) {
-				//return math.mul(new float4x4(force.rotation, force.position), new float4(0f, 0f, force.strength, 0f)).xyz;
-				return math.transform(new float4x4(force.rotation, force.position), new float3(0f, 0f, force.strength));
-			}
+			if (force.type == SpringBoneForceType.Directional)
+				return math.rotate(new float4x4(force.rotation, force.position), new float3(0f, 0f, force.strength));
 
 			//Wind
 			//var fullWeight = force.weight * force.strength;
@@ -401,11 +405,10 @@ namespace Unity.Animations.SpringBones.Jobs {
 			//var factor = force.timeInSecond / force.periodInSecond * PI2;
 
 			var localToWorldMatrix = new float4x4(force.rotation, force.position);
-			var worldToLocalMatrix = math.mul(new float4x4(math.inverse(force.rotation), float3.zero), new float4x4(float3x3.identity, -force.position));
-			//var worldToLocalMatrix = Matrix4x4.Inverse(force.localToWorldMatrix);
+			var worldToLocalMatrix = math.mul(new float4x4(math.inverse(force.rotation), float3.zero), float4x4.Translate(-force.position));
 
 			// Wind
-			var boneLocalPositionInWindWorld = math.mul(worldToLocalMatrix, new float4(bone.position, 1f));
+			var boneLocalPositionInWindWorld = math.transform(worldToLocalMatrix, bone.position);
 			var positionalMultiplier = PI2 / force.peakDistance;
 			var positionalFactor = math.sin(positionalMultiplier * boneLocalPositionInWindWorld.x) + math.cos(positionalMultiplier * boneLocalPositionInWindWorld.z);
 			var offsetMultiplier = math.sin(force.timeFactor + positionalFactor);
