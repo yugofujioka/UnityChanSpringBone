@@ -9,7 +9,7 @@ namespace FUtility {
     /// <typeparam name="T">要素の型</typeparam>
     public unsafe struct NestedNativeArray<T> where T : struct {
         private void* ptr;
-        public int length;
+        private int length;
 
         /// <summary>
         /// NativeArrayからのラップ
@@ -35,7 +35,6 @@ namespace FUtility {
 
         /// <summary>
         /// NativeArrayのように使える
-        /// 結局こうなってしまうのか感
         /// </summary>
         /// <param name="index">要素インデックス</param>
         /// <returns>要素</returns>
@@ -65,7 +64,6 @@ namespace FUtility {
         /// <summary>
         /// 配列のポインタ
         /// </summary>
-        /// <returns></returns>
         public unsafe void* GetUnsafeReadOnlyPtr() {
             return this.ptr;
         }

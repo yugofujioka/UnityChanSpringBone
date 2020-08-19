@@ -24,15 +24,13 @@ namespace FUtility {
     /// <summary>
     /// Like memory pool for NativeArray
     /// </summary>
+    [Il2CppSetOption(Option.NullChecks, false), Il2CppSetOption(Option.ArrayBoundsChecks, false), Il2CppSetOption(Option.DivideByZeroChecks, false)]
     public class NativeContainerPool<T> where T : struct {
         private NativeArray<T> array;
-        private TaskSystem<NativeBlock> freePool;
-        private TaskSystem<NativeBlock> usedPool;
+        private TaskSystem<NativeBlock> freePool, usedPool;
 
-        private MatchHandler<NativeBlock> getFreeBlockHandler;
-        private MatchHandler<NativeBlock> getusedBlockHandler;
-        private MatchHandler<NativeBlock> connectBlockTopHandler;
-        private MatchHandler<NativeBlock> connectBlockEndHandler;
+        private MatchHandler<NativeBlock> getFreeBlockHandler, getusedBlockHandler;
+        private MatchHandler<NativeBlock> connectBlockTopHandler, connectBlockEndHandler;
 
         public NativeArray<T> nativeArray => this.array;
 
@@ -171,15 +169,16 @@ namespace FUtility {
         }
         private unsafe bool Free(void* ptr) {
             this.freeAddress = ptr;
-            // 使用中のブロックから回収
+
+            // Find received pointer in used blocks.
             if (this.usedPool.Pickup(this.getusedBlockHandler, out this.connectBlock)) {
                 NativeBlock block;
-                // 空きブロックの後ろ接続
+                // Add end of free blocks
                 if (this.freePool.Pickup(this.connectBlockTopHandler, out block)) {
                     block.size += this.connectBlock.size;
                     this.connectBlock = block;
                 }
-                // 空きブロックの先頭接続
+                // Add top of free blocks
                 if (this.freePool.Pickup(this.connectBlockEndHandler, out block)) {
                     this.connectBlock.size += block.size;
                 }
@@ -192,7 +191,7 @@ namespace FUtility {
         }
         private unsafe void* freeAddress = null;
         private unsafe int GetUsedBlock(NativeBlock block) {
-            // NOTE: 数十程度のブロック数を想定しているので全走査
+            // NOTE: I suppose to use dozens blocks. So I don't recognize full scan as bottlenecks.
             if (this.freeAddress == block.ptr)
                 return 1;
             return 0;

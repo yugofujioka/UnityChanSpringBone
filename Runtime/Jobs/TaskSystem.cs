@@ -7,10 +7,29 @@
 http://opensource.org/licenses/mit-license.php
 *************************************************/
 
+using System;
 using UnityEngine;
-using Unity.IL2CPP.CompilerServices;
 
 namespace FUtility {
+    #region IL2CPP OPTION
+    // NOTE: Copy Attribute to avoid conflicts
+    public enum Option {
+        NullChecks = 1,
+        ArrayBoundsChecks = 2,
+        DivideByZeroChecks = 3,
+    }
+
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
+    public class Il2CppSetOptionAttribute : Attribute {
+        public Option Option { get; private set; }
+        public object Value { get; private set; }
+
+        public Il2CppSetOptionAttribute(Option option, object value) {
+            Option = option;
+            Value = value;
+        }
+    }
+    #endregion
 
     public delegate bool OrderHandler<T>(T obj, int no); // true:ALIVE, false:DEAD
     public delegate int MatchHandler<T>(T obj); // 1:HIT, 0:MISS, -1:BREAK
