@@ -43,7 +43,9 @@ Burst Compiler v1.3.4 (verified)
 UnityChanSpringBone
 
 Copyright (c) 2018 Unity Technologies
+
 Code released under the MIT License
+
 https://opensource.org/licenses/mit-license.php
 
 //----------------------------------------------------------------------------
@@ -51,7 +53,9 @@ https://opensource.org/licenses/mit-license.php
 NativeContainerPool.cs
 
 Copyright (c) 2020 Yugo Fujioka
+
 Code released under the MIT License
+
 https://opensource.org/licenses/mit-license.php
 
 //----------------------------------------------------------------------------
@@ -59,5 +63,7 @@ https://opensource.org/licenses/mit-license.php
 TaskSystem.cs
 
 Copyright (c) 2017 Yugo Fujioka
+
 Code released under the MIT License
+
 https://opensource.org/licenses/mit-license.php
