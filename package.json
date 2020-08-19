@@ -9,6 +9,6 @@
   ],
   "category": "Animation",
   "dependencies": {
-    "com.unity.burst": "1.3.3"
+    "com.unity.burst": "1.3.4"
   }
 }
