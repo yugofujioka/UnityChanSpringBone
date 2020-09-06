@@ -163,6 +163,15 @@ namespace Unity.Animations.SpringBones.Jobs {
 				Debug.Log($"SpringJobScheduler clamped maxWorkerThreadCount {this.maxWorkerThreadCount} to {workerThreadCount}");
 				this.maxWorkerThreadCount = workerThreadCount;
 			}
+			
+			// NOTE: Schedule内の初期化を促す為に空実行
+			this.preHandle[(int)TRANSFORM_JOB.PIVOT_BONE] = this.pivotJob.Schedule(this.bonePivotTransforms);
+			this.preHandle[(int)TRANSFORM_JOB.PARENT_BONE] = this.parentJob.Schedule(this.boneParentTransforms);
+			this.preHandle[(int)TRANSFORM_JOB.COLLIDER] = this.colliderJob.Schedule(this.colliderTransforms);
+			this.preHandle[(int)TRANSFORM_JOB.LENGTH_LIMIT] = this.lengthTargetJob.Schedule(this.lengthLimitTransforms);
+			var combineHandle = JobHandle.CombineDependencies(this.preHandle);
+			this.handle = this.springJob.Schedule(0, 0, combineHandle);
+			this.applyJob.Schedule(this.boneTransforms, this.handle).Complete();
 		}
 
 		void OnDestroy() {
