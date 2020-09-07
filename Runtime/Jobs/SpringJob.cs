@@ -319,10 +319,10 @@ namespace Unity.Animations.SpringBones.Jobs {
 			var origin = bone.position;
 			var vector = bone.currentTipPosition - origin;
 
-			var forward = math.transform(pivotLocalToWorld, new float3(-1f, 0f, 0f));// Vector3.right;
+			var forward = math.rotate(pivotLocalToWorld, new float3(-1f, 0f, 0f));// Vector3.right;
 
-			var mulBack = math.transform(pivotLocalToWorld, new float3(0f, 0f, -1f));// Vector3.back;
-			var mulDown = math.transform(pivotLocalToWorld, new float3(0f, -1f, 0f));// Vector3.down;
+			var mulBack = math.rotate(pivotLocalToWorld, new float3(0f, 0f, -1f));// Vector3.back;
+			var mulDown = math.rotate(pivotLocalToWorld, new float3(0f, -1f, 0f));// Vector3.down;
 
 			if (prop.yAngleLimits.active) {
 				vector = prop.yAngleLimits.ConstrainVector(
