@@ -282,20 +282,22 @@ namespace Unity.Animations.SpringBones.Jobs {
 
 			// Colliders
 			int nColliders = this.jobColliders.Length;
-			var colPropAlloc = scheduler.colProperties.AllocNestedArray(nColliders, out this.colIndex, out this.colProperties);
-			if (!colPropAlloc) {
-				Debug.LogError("不明なエラー");
-				this.Final(scheduler);
-				return false;
-			}
-			for (int i = 0; i < nColliders; ++i) {
-				this.colProperties[i] = this.jobColProperties[i];
-				scheduler.colliderTransforms[this.colIndex + i] = this.jobColliders[i].transform;
+			if (nColliders > 0) {
+				var colPropAlloc = scheduler.colProperties.AllocNestedArray(nColliders, out this.colIndex, out this.colProperties);
+				if (!colPropAlloc) {
+					Debug.LogError("不明なエラー");
+					this.Final(scheduler);
+					return false;
+				}
+				for (int i = 0; i < nColliders; ++i) {
+					this.colProperties[i] = this.jobColProperties[i];
+					scheduler.colliderTransforms[this.colIndex + i] = this.jobColliders[i].transform;
 
-				// 本体についているコライダーの削除
-				if (this.optimizeTransform) {
-					Object.DestroyImmediate(this.jobColliders[i]);
-					this.jobColliders = null;
+					// 本体についているコライダーの削除
+					if (this.optimizeTransform) {
+						Object.DestroyImmediate(this.jobColliders[i]);
+						this.jobColliders = null;
+					}
 				}
 			}
 			// LengthLimits
