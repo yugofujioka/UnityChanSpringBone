@@ -25,16 +25,15 @@ And this repository was customized using JobSystem/Burst Compiler.
 
 ## Attention!
 
-- Job化したSpringManagerを元に戻すことは出来ません
 - Job化したSpringBone、SpringColliderを再編集することは出来ません
-- 上記２つはどちらも未実装であるだけで作れば可能です、必要があれば拡張してください
+- Job化した後に元に戻せるよう対応しました。ただし旧データを保持するために若干のメモリ確保量が増加します。
 
 
 
 ## Required
 
 Unity 2019.4 LTS
-Burst Compiler v1.3.4 (verified)
+Burst Compiler v1.3.6 (verified)
 
 
 
